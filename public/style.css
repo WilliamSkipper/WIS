@@ -1,0 +1,93 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100vh;
+  background-color: #151515;
+  color: white;
+}
+#drop-area {
+  width: 80%;
+  border: 2px dashed #ccc;
+  margin: 20px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+#file-list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  list-style: none;
+  padding: 0;
+}
+
+.file-item {
+  text-align: center;
+}
+
+.thumbnail,
+video {
+  width: 200px;
+  height: 200px;
+  margin-bottom: 5px;
+  object-fit: cover;
+}
+
+.file-icon {
+  width: 200px; /* Adjust size as needed */
+  height: 200px; /* Adjust size as needed */
+  margin-bottom: 5px;
+}
+#fileInputContainer {
+  display: none;
+}
+#fileInputLabel {
+  cursor: pointer;
+  color: blue;
+  text-decoration: underline;
+}
+
+.downloadBtn {
+  background-color: rgb(118, 209, 255);
+  border: none;
+  color: black;
+  border-radius: 10px;
+  font-size: 15px;
+  width: 100%;
+  height: 40px;
+  margin-bottom: 10px;
+}
+
+.deleteBtn {
+  background-color: rgb(255, 89, 89);
+  border: none;
+  color: white;
+  border-radius: 10px;
+  font-size: 15px;
+  width: 100%;
+  height: 40px;
+}
+
+/* .banner {
+  position: absolute;
+  top: 80%;
+  width: 40%;
+  height: 40px;
+  text-align: center;
+  font-size: 30px;
+  color: white;
+  background-color: pink;
+} */
+
+@media only screen and (max-width: 600px) {
+  #file-list {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    list-style: none;
+    padding: 0;
+  }
+}

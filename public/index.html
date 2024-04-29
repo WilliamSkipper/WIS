@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/x-icon" href="icons/icon.png" />
+    <title>Drag and Drop File Upload</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="drop-area">
+      <h1>Drag & Drop Files Here</h1>
+      <p>or</p>
+      <input type="file" id="fileInput" multiple />
+    </div>
+
+    <ul id="file-list"></ul>
+    <div id="server-info">
+      <p>You can access this server at:</p>
+      <p id="ip-address"></p>
+    </div>
+    <!-- <div id="bannerDelete" class="banner">Deleted Successfully</div>
+    <div id="bannerError" class="banner">Error</div>
+    <div id="bannerSuccess" class="banner">Imported Successfully</div> -->
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        const dropArea = document.getElementById("drop-area");
+        const fileList = document.getElementById("file-list");
+        const fileInput = document.getElementById("fileInput");
+        const ipAddressElem = document.getElementById("ip-address");
+
+        // WebSocket connection
+        const socket = new WebSocket(`ws://${window.location.host}`);
+
+        // Function to delete file
+        function deleteFile(filename) {
+          fetch(`/delete/${filename}`, {
+            method: "DELETE",
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              console.log(data);
+              // alert("File deleted successfully");
+              refreshFileList();
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              // alert("An error occurred while deleting the file");
+            });
+        }
+
+        // Define refreshFileList globally
+        function refreshFileList() {
+          fetch("/files")
+            .then((response) => response.json())
+            .then((data) => {
+              const fileList = document.getElementById("file-list");
+              const ipAddressElem = document.getElementById("ip-address");
+
+              // Clear previous file list
+              fileList.innerHTML = "";
+
+              // Set IP address and hostname
+              ipAddressElem.textContent = `IP Address: http://${data.ipAddress}:${data.PORT}`;
+
+              // Iterate through each file detail
+              data.fileDetails.forEach((file) => {
+                const listItem = document.createElement("li");
+                listItem.classList.add("file-item");
+
+                // Truncate file name if longer than 12 characters
+                const fileName = document.createElement("span");
+                fileName.textContent =
+                  file.name.length > 12
+                    ? file.name.substring(0, 12) + "..."
+                    : file.name;
+                listItem.appendChild(fileName);
+
+                // Create file content container
+                const fileContent = document.createElement("div");
+
+                // Create an image element for images
+                if (file.isImage && file.url) {
+                  const img = document.createElement("img");
+                  img.src = file.url;
+                  img.alt = file.name;
+                  img.classList.add("thumbnail");
+                  fileContent.appendChild(img);
+                }
+                // Create a video element for videos
+                else if (file.isVideo && file.url) {
+                  const video = document.createElement("video");
+                  video.src = file.url;
+                  video.controls = true;
+                  video.classList.add("thumbnail");
+                  fileContent.appendChild(video);
+                }
+                // Use file type icon for other file types
+                else {
+                  const fileTypeImg = document.createElement("img");
+                  fileTypeImg.src = file.fileType;
+                  fileTypeImg.alt = file.name;
+                  fileTypeImg.classList.add("file-icon");
+                  fileContent.appendChild(fileTypeImg);
+                }
+
+                // Append file content container to list item
+                listItem.appendChild(fileContent);
+
+                // Append list item to file list
+                fileList.appendChild(listItem);
+
+                // Create buttons container
+                const buttonsContainer = document.createElement("div");
+                buttonsContainer.classList.add("buttons-container");
+
+                // Create download button
+                const downloadBtn = document.createElement("button");
+                downloadBtn.textContent = "Download";
+                downloadBtn.classList.add("downloadBtn"); // Add downloadBtn class
+                downloadBtn.addEventListener("click", () => {
+                  downloadFile(file.name, file.url);
+                });
+
+                // Create delete button
+                const deleteBtn = document.createElement("button");
+                deleteBtn.textContent = "Delete";
+                deleteBtn.classList.add("deleteBtn"); // Add deleteBtn class
+                deleteBtn.addEventListener("click", () => {
+                  deleteFile(file.name);
+                });
+
+                // Append download button to buttons container
+                buttonsContainer.appendChild(downloadBtn);
+
+                // Append buttons container to list item
+                listItem.appendChild(buttonsContainer);
+
+                // Append delete button to buttons container
+                buttonsContainer.appendChild(deleteBtn);
+
+                // Append list item to file list
+                fileList.appendChild(listItem);
+              });
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              // alert("Failed to fetch file list");
+            });
+        }
+
+        socket.addEventListener("message", (event) => {
+          const data = JSON.parse(event.data);
+          if (data.event === "fileUploaded") {
+            console.log("File uploaded event received");
+            refreshFileList(); // Call the function here
+          }
+        });
+
+        // Fetch initial file list
+        refreshFileList();
+
+        // Handle file selection
+        fileInput.addEventListener("change", () => {
+          handleFiles(fileInput.files);
+        });
+
+        // Handle file upload
+        function handleFiles(files) {
+          const formData = new FormData();
+          for (let i = 0; i < files.length; i++) {
+            formData.append("file", files[i]);
+          }
+
+          fetch("/upload", {
+            method: "POST",
+            body: formData,
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              console.log(data);
+              alert("File(s) uploaded successfully");
+              refreshFileList();
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              alert("An error occurred while uploading the file(s)");
+            });
+        }
+
+        // Function to download file
+        function downloadFile(filename, url) {
+          fetch(url)
+            .then((response) => response.blob())
+            .then((blob) => {
+              const downloadUrl = window.URL.createObjectURL(blob);
+
+              // Create a temporary anchor element
+              const a = document.createElement("a");
+              a.href = downloadUrl;
+              a.download = filename;
+
+              // Simulate a click on the anchor element
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+
+              // Clean up
+              window.URL.revokeObjectURL(downloadUrl);
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              alert("Failed to download file");
+            });
+        }
+
+        // Prevent default drag behaviors
+        ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
+          dropArea.addEventListener(eventName, preventDefaults, false);
+          document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        // Highlight drop area when item is dragged over it
+        ["dragenter", "dragover"].forEach((eventName) => {
+          dropArea.addEventListener(eventName, highlight, false);
+        });
+
+        // Unhighlight drop area when item is dragged away
+        ["dragleave", "drop"].forEach((eventName) => {
+          dropArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        // Handle dropped files
+        dropArea.addEventListener("drop", handleDrop, false);
+
+        function preventDefaults(e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+
+        function highlight(e) {
+          dropArea.classList.add("highlight");
+        }
+
+        function unhighlight(e) {
+          dropArea.classList.remove("highlight");
+        }
+
+        function handleDrop(e) {
+          const dt = e.dataTransfer;
+          const files = dt.files;
+
+          handleFiles(files);
+        }
+      });
+    </script>
+  </body>
+</html>
