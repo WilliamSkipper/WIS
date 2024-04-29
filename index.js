@@ -12,6 +12,15 @@ const PORT = process.env.PORT || 3000;
 
 const uploadDir = `C:/users/${process.env.USERNAME}/Documents/WIS/`;
 
+// Function to ensure upload directory exists
+function ensureUploadDirExists() {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+}
+
+ensureUploadDirExists(); // Call the function to create the directory if it doesn't exist
+
 const ipAddress = getIpAddress(); // Function to get IP address
 
 const storage = multer.diskStorage({
