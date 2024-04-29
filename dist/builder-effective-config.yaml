@@ -1,9 +1,0 @@
-directories:
-  output: dist
-  buildResources: build
-appId: com.willskip.wis
-productName: WIS
-win:
-  icon: icon.ico
-files: []
-electronVersion: 30.0.1
